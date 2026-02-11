@@ -3,7 +3,7 @@
 <head>
     <title>Radius Map — пешая доступность</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -35,7 +35,7 @@
             z-index: 1;
         }
         
-        /* Контроллер радиус */
+        /* Контроллер радиуса */
         .radius-control {
             position: fixed;
             bottom: 30px;
@@ -104,7 +104,6 @@
             border: 1px solid rgba(79, 172, 254, 0.3);
             max-width: 300px;
             color: white;
-            pointer-events: none;
         }
         
         .location-badge {
@@ -122,34 +121,6 @@
             align-items: center;
             gap: 8px;
             font-size: 14px;
-            pointer-events: none;
-        }
-        
-        .building-popup .leaflet-popup-content-wrapper {
-            background: rgba(10, 15, 26, 0.95);
-            backdrop-filter: blur(10px);
-            color: white;
-            border-radius: 16px;
-            border-left: 4px solid #4facfe;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-        }
-        
-        .building-popup .leaflet-popup-tip {
-            background: rgba(10, 15, 26, 0.95);
-        }
-        
-        .route-line {
-            stroke: #4facfe;
-            stroke-width: 4;
-            stroke-opacity: 0.8;
-            stroke-linecap: round;
-            filter: drop-shadow(0 0 8px rgba(79, 172, 254, 0.5));
-            animation: dash 1s ease-out;
-        }
-        
-        @keyframes dash {
-            from { stroke-dashoffset: 1000; }
-            to { stroke-dashoffset: 0; }
         }
         
         @media (max-width: 768px) {
@@ -179,26 +150,20 @@
 <body>
     <div id="map"></div>
     
-    <!-- Бейдж с адресом -->
     <div class="location-badge" id="location-badge">
         <span style="color: #4facfe;">📍</span>
         <span id="address-text">Загрузка...</span>
     </div>
     
-    <!-- Панель инфо -->
     <div class="info-panel" id="info-panel">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
             <div style="background: #4facfe; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 12px #4facfe;"></div>
-            <span style="font-weight: 600;">Информация о районе</span>
+            <span style="font-weight: 600;">Информация</span>
         </div>
         <div id="building-stats">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                 <span style="color: #888;">Зданий в радиусе:</span>
                 <span style="color: #4facfe; font-weight: 700;" id="building-count">0</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: #888;">Площадь покрытия:</span>
-                <span style="color: #4facfe; font-weight: 700;" id="area-size">0 км²</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
                 <span style="color: #888;">Маршрутов построено:</span>
@@ -207,7 +172,6 @@
         </div>
     </div>
     
-    <!-- Контроллер радиуса -->
     <div class="radius-control">
         <h3>
             <span>🎯</span>
@@ -238,351 +202,161 @@
         </div>
         
         <div style="margin-top: 16px; display: flex; gap: 8px;">
-            <button id="focus-center" style="flex: 1; background: rgba(79,172,254,0.1); border: 1px solid #4facfe; color: white; padding: 10px; border-radius: 12px; cursor: pointer; font-family: 'Inter'; transition: 0.2s;">
-                🔍 В центр
-            </button>
-            <button id="clear-routes" style="flex: 1; background: rgba(255,80,80,0.1); border: 1px solid #ff5050; color: white; padding: 10px; border-radius: 12px; cursor: pointer; font-family: 'Inter'; transition: 0.2s;">
-                🧹 Очистить
-            </button>
+            <button id="focus-center" style="flex: 1; background: rgba(79,172,254,0.1); border: 1px solid #4facfe; color: white; padding: 10px; border-radius: 12px; cursor: pointer; font-family: 'Inter';">🔍 В центр</button>
+            <button id="clear-routes" style="flex: 1; background: rgba(255,80,80,0.1); border: 1px solid #ff5050; color: white; padding: 10px; border-radius: 12px; cursor: pointer; font-family: 'Inter';">🧹 Очистить</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/osmtogeojson@3.0.0-beta.4/osmtogeojson.js"></script>
     
     <script>
-        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-        const map = L.map('map', {
-            zoomControl: false,
-            attributionControl: true
-        }).setView([55.7558, 37.6176], 16);
+        // Инициализация карты
+        const map = L.map('map').setView([55.7558, 37.6176], 16);
         
-        // Добавляем красивые контролы зума справа
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-        
-        // ==================== СЛОИ КАРТЫ ====================
-        
-        // 1. Спутник ESRI (реальные дома!)
+        // Спутник ESRI
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri, Maxar, Earthstar Geographics',
-            maxZoom: 20,
-            minZoom: 10
+            attribution: '© Esri',
+            maxZoom: 19
         }).addTo(map);
         
-        // 2. Полупрозрачные дома (кликабельные)
+        // Слои
         const buildingsLayer = L.layerGroup().addTo(map);
-        
-        // 3. Слой для маршрутов
         const routesLayer = L.layerGroup().addTo(map);
-        
-        // 4. Круг радиуса
         let radiusCircle = null;
         
-        // ==================== СОСТОЯНИЕ ====================
+        // Состояние
         const state = {
             lat: 55.7558,
             lng: 37.6176,
             radius: 800,
             height: 170,
-            address: 'Москва, Красная площадь',
-            buildingsCount: 0,
-            routesCount: 0
+            address: 'Москва, Красная площадь'
         };
         
-        // ==================== ФУНКЦИИ ====================
-        
-        // Геокодинг (адрес -> координаты)
-        async function geocode(address) {
-            try {
-                const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
-                const response = await fetch(url, {
-                    headers: { 'User-Agent': 'RadiusMap/1.0' }
-                });
-                const data = await response.json();
-                
-                if (data && data[0]) {
-                    return {
-                        lat: parseFloat(data[0].lat),
-                        lng: parseFloat(data[0].lon),
-                        display: data[0].display_name
-                    };
-                }
-            } catch (e) {
-                console.error('Geocoding error:', e);
-            }
-            return null;
+        // Получаем параметры из URL
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                lat: parseFloat(params.get('lat')),
+                lng: parseFloat(params.get('lng')),
+                rad: parseInt(params.get('rad')),
+                h: parseInt(params.get('h')),
+                addr: params.get('addr')
+            };
         }
         
-        // Загрузка домов из OSM
+        // Загрузка домов
         async function loadBuildings(lat, lng, radius) {
             buildingsLayer.clearLayers();
             
-            const overpassUrl = 'https://overpass-api.de/api/interpreter';
             const query = `
                 [out:json];
-                (
-                    way["building"](around:${radius}, ${lat}, ${lng});
-                    relation["building"](around:${radius}, ${lat}, ${lng});
-                );
+                (way["building"](around:${radius}, ${lat}, ${lng}););
                 out body;
                 >;
                 out skel qt;
             `;
             
             try {
-                const response = await fetch(overpassUrl, {
+                const response = await fetch('https://overpass-api.de/api/interpreter', {
                     method: 'POST',
-                    body: query,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
+                    body: query
                 });
-                
                 const data = await response.json();
                 const geojson = osmtogeojson(data);
                 
-                let count = 0;
                 L.geoJSON(geojson, {
                     style: {
                         color: '#00ffff',
-                        weight: 0.8,
-                        opacity: 0.4,
-                        fillOpacity: 0.05,
-                        fillColor: '#00ffff',
-                        dashArray: null
-                    },
-                    onEachFeature: (feature, layer) => {
-                        count++;
-                        
-                        layer.on('click', async (e) => {
-                            L.DomEvent.stopPropagation(e);
-                            await buildRoute(lat, lng, e.latlng.lat, e.latlng.lng, layer);
-                        });
-                        
-                        layer.on('mouseover', () => {
-                            layer.setStyle({
-                                weight: 1.5,
-                                opacity: 0.8,
-                                fillOpacity: 0.15
-                            });
-                        });
-                        
-                        layer.on('mouseout', () => {
-                            layer.setStyle({
-                                weight: 0.8,
-                                opacity: 0.4,
-                                fillOpacity: 0.05
-                            });
-                        });
+                        weight: 1,
+                        opacity: 0.6,
+                        fillOpacity: 0.1,
+                        fillColor: '#00ffff'
                     }
                 }).addTo(buildingsLayer);
                 
-                state.buildingsCount = count;
-                document.getElementById('building-count').textContent = count;
-                
-                // Площадь круга
-                const area = (Math.PI * Math.pow(radius, 2)) / 1000000;
-                document.getElementById('area-size').textContent = area.toFixed(2) + ' км²';
-                
-            } catch (error) {
-                console.error('Error loading buildings:', error);
-            }
-        }
-        
-        // Построение маршрута
-        async function buildRoute(fromLat, fromLng, toLat, toLng, buildingLayer) {
-            try {
-                const url = `https://router.project-osrm.org/route/v1/foot/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson&steps=false`;
-                
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                if (data.routes && data.routes[0]) {
-                    const route = data.routes[0];
-                    const distance = Math.round(route.distance);
-                    const duration = Math.round(route.duration / 60);
-                    
-                    // Добавляем маршрут на карту
-                    const routeLine = L.geoJSON(route.geometry, {
-                        style: {
-                            color: '#4facfe',
-                            weight: 4,
-                            opacity: 0.8,
-                            lineCap: 'round',
-                            lineJoin: 'round'
-                        }
-                    }).addTo(routesLayer);
-                    
-                    state.routesCount++;
-                    document.getElementById('routes-count').textContent = state.routesCount;
-                    
-                    // Показываем информацию
-                    const popupContent = `
-                        <div style="font-family: 'Inter'; min-width: 200px;">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                                <span style="background: #4facfe; width: 8px; height: 8px; border-radius: 50%;"></span>
-                                <span style="font-weight: 600;">Пешеходный маршрут</span>
-                            </div>
-                            <div style="background: rgba(79,172,254,0.1); padding: 12px; border-radius: 12px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                    <span style="color: #888;">Расстояние:</span>
-                                    <span style="color: white; font-weight: 600;">${distance} м</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                    <span style="color: #888;">Время:</span>
-                                    <span style="color: white; font-weight: 600;">${duration} мин</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #888;">Темп:</span>
-                                    <span style="color: white; font-weight: 600;">${Math.round(distance/duration)} м/мин</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    
-                    buildingLayer.bindPopup(popupContent, {
-                        className: 'building-popup',
-                        maxWidth: 300
-                    }).openPopup();
-                }
-            } catch (error) {
-                console.error('Route error:', error);
+                document.getElementById('building-count').textContent = geojson.features.length;
+            } catch (e) {
+                console.error('Error loading buildings:', e);
             }
         }
         
         // Рисуем радиус
         function drawRadius(lat, lng, radius) {
-            if (radiusCircle) {
-                map.removeLayer(radiusCircle);
-            }
+            if (radiusCircle) map.removeLayer(radiusCircle);
             
             radiusCircle = L.circle([lat, lng], {
                 radius: radius,
                 color: '#4facfe',
                 weight: 2,
-                opacity: 0.8,
                 fillColor: '#4facfe',
-                fillOpacity: 0.1,
-                dashArray: null
+                fillOpacity: 0.1
             }).addTo(map);
             
-            // Маркер центра
-            const marker = L.marker([lat, lng], {
-                icon: L.divIcon({
-                    className: 'custom-marker',
-                    html: '<div style="background: #4facfe; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 20px #4facfe;"></div>',
-                    iconSize: [22, 22],
-                    iconAnchor: [11, 11]
-                })
-            }).addTo(map);
+            L.marker([lat, lng]).addTo(map)
+                .bindPopup('📍 Точка старта')
+                .openPopup();
             
-            // Загружаем дома
             loadBuildings(lat, lng, radius);
+            document.getElementById('radius-value').textContent = radius + ' м';
         }
         
-        // Обновляем время от радиуса и роста
-        function updateTimeFromRadius() {
-            const speed = 5 * (state.height / 170) * 1000 / 60; // м/мин
-            const time = Math.round(state.radius / speed);
-            document.getElementById('time-value').textContent = time;
-            document.getElementById('speed-value').textContent = (5 * (state.height / 170)).toFixed(1);
-            document.getElementById('height-value').textContent = state.height;
-            document.getElementById('radius-value').textContent = state.radius + ' м';
-        }
-        
-        // ==================== ИНИЦИАЛИЗАЦИЯ ИЗ URL ====================
-        async function initFromUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
+        // Инициализация из URL
+        const params = getUrlParams();
+        if (params.lat && params.lng) {
+            state.lat = params.lat;
+            state.lng = params.lng;
+            map.setView([params.lat, params.lng], 16);
             
-            // Получаем параметры
-            const lat = parseFloat(urlParams.get('lat'));
-            const lng = parseFloat(urlParams.get('lng'));
-            const rad = parseInt(urlParams.get('rad'));
-            const h = parseInt(urlParams.get('h'));
-            const addr = urlParams.get('addr');
-            
-            if (lat && lng) {
-                state.lat = lat;
-                state.lng = lng;
-                map.setView([lat, lng], 16);
-            }
-            
-            if (rad) {
-                state.radius = Math.min(Math.max(rad, 100), 2000);
+            if (params.rad) {
+                state.radius = Math.min(Math.max(params.rad, 100), 2000);
                 document.getElementById('radius-slider').value = state.radius;
             }
             
-            if (h) {
-                state.height = Math.min(Math.max(h, 140), 220);
+            if (params.h) {
+                state.height = params.h;
                 document.getElementById('height-value').textContent = state.height;
+                
+                // Считаем скорость
+                const speed = 5 * (state.height / 170);
+                document.getElementById('speed-value').textContent = speed.toFixed(1);
+                
+                // Считаем время
+                const speedMmin = (speed * 1000) / 60;
+                const time = Math.round(state.radius / speedMmin);
+                document.getElementById('time-value').textContent = time;
             }
             
-            if (addr) {
-                state.address = decodeURIComponent(addr);
+            if (params.addr) {
+                state.address = decodeURIComponent(params.addr);
                 document.getElementById('address-text').textContent = state.address;
-            } else if (lat && lng) {
-                // Обратный геокодинг
-                try {
-                    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
-                    const response = await fetch(url, {
-                        headers: { 'User-Agent': 'RadiusMap/1.0' }
-                    });
-                    const data = await response.json();
-                    state.address = data.display_name || 'Выбранная точка';
-                    document.getElementById('address-text').textContent = state.address;
-                } catch (e) {
-                    document.getElementById('address-text').textContent = 'Выбранная точка';
-                }
             }
             
-            // Рисуем радиус
             drawRadius(state.lat, state.lng, state.radius);
-            updateTimeFromRadius();
         }
-        
-        // ==================== СОБЫТИЯ ====================
         
         // Слайдер радиуса
         document.getElementById('radius-slider').addEventListener('input', (e) => {
             state.radius = parseInt(e.target.value);
             drawRadius(state.lat, state.lng, state.radius);
-            updateTimeFromRadius();
+            
+            // Пересчитываем время
+            const speed = 5 * (state.height / 170);
+            const speedMmin = (speed * 1000) / 60;
+            const time = Math.round(state.radius / speedMmin);
+            document.getElementById('time-value').textContent = time;
+            document.getElementById('radius-value').textContent = state.radius + ' м';
         });
         
-        // Кнопка "В центр"
+        // Кнопки
         document.getElementById('focus-center').addEventListener('click', () => {
             map.setView([state.lat, state.lng], 16);
         });
         
-        // Кнопка "Очистить"
         document.getElementById('clear-routes').addEventListener('click', () => {
             routesLayer.clearLayers();
-            state.routesCount = 0;
             document.getElementById('routes-count').textContent = '0';
         });
-        
-        // Клик по карте - новый центр
-        map.on('click', async (e) => {
-            state.lat = e.latlng.lat;
-            state.lng = e.latlng.lng;
-            
-            // Обратный геокодинг
-            try {
-                const url = `https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lng}&format=json`;
-                const response = await fetch(url, {
-                    headers: { 'User-Agent': 'RadiusMap/1.0' }
-                });
-                const data = await response.json();
-                state.address = data.display_name || 'Выбранная точка';
-                document.getElementById('address-text').textContent = state.address;
-            } catch (e) {
-                document.getElementById('address-text').textContent = 'Выбранная точка';
-            }
-            
-            drawRadius(state.lat, state.lng, state.radius);
-        });
-        
-        // Запуск
-        initFromUrl();
     </script>
 </body>
 </html>
