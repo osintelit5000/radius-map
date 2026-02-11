@@ -1,171 +1,74 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
-    <title>Radius Map — пешая доступность</title>
+    <title>Radius Map</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
+    <!-- 🔥 ИСПРАВЛЕНО: правильная версия osmtogeojson -->
+    <script src="https://unpkg.com/@placemarkio/osmtogeojson@3.0.0-beta.5/osmtogeojson.js"></script>
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0a0f1a; color: white; overflow: hidden; }
+        #map { height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 1; }
+        .radius-control { 
+            position: fixed; bottom: 20px; left: 20px; right: 20px; z-index: 1000;
+            background: rgba(10, 15, 26, 0.95); backdrop-filter: blur(10px);
+            padding: 20px; border-radius: 20px; border: 1px solid #4facfe;
+            max-width: 400px; margin: 0 auto;
         }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0f1a;
-            color: white;
-            overflow: hidden;
-        }
-        
-        #map {
-            height: 100vh;
-            width: 100vw;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-        
-        .radius-control {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: rgba(10, 15, 26, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 20px;
-            border: 1px solid #4facfe;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            color: white;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        
-        .radius-control h3 {
-            margin-bottom: 15px;
-            color: #4facfe;
-            font-weight: 600;
-        }
-        
-        .slider {
-            width: 100%;
-            accent-color: #4facfe;
-            height: 8px;
-            border-radius: 10px;
-        }
-        
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #4facfe;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: #888;
-            margin-top: 4px;
-        }
-        
-        .info-panel {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: rgba(10, 15, 26, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 16px;
-            border-radius: 16px;
-            border: 1px solid #4facfe;
-            color: white;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        
         .location-badge {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: rgba(10, 15, 26, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 12px 20px;
-            border-radius: 40px;
-            border: 1px solid #4facfe;
-            color: white;
-            text-align: center;
-            font-size: 14px;
-            max-width: 400px;
-            margin: 0 auto;
-            margin-top: 80px;
+            position: fixed; top: 20px; left: 20px; right: 20px; z-index: 1000;
+            background: rgba(10, 15, 26, 0.95); backdrop-filter: blur(10px);
+            padding: 12px 20px; border-radius: 40px; border: 1px solid #4facfe;
+            max-width: 400px; margin: 0 auto; text-align: center;
         }
-        
+        .slider { width: 100%; accent-color: #4facfe; }
+        .stats { display: flex; justify-content: space-around; margin-top: 20px; }
+        .stat-value { font-size: 24px; color: #4facfe; }
         button {
-            background: rgba(79,172,254,0.1);
-            border: 1px solid #4facfe;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 12px;
-            font-family: inherit;
-            cursor: pointer;
-            transition: 0.2s;
+            background: rgba(79,172,254,0.1); border: 1px solid #4facfe;
+            color: white; padding: 10px 20px; border-radius: 12px;
+            cursor: pointer; margin: 5px;
         }
-        
-        button:hover {
-            background: rgba(79,172,254,0.2);
+        .info-panel {
+            position: fixed; top: 100px; left: 20px; right: 20px; z-index: 1000;
+            background: rgba(10, 15, 26, 0.95); backdrop-filter: blur(10px);
+            padding: 16px; border-radius: 16px; border: 1px solid #4facfe;
+            max-width: 400px; margin: 0 auto;
         }
     </style>
 </head>
 <body>
-    <!-- КАРТА -->
     <div id="map"></div>
     
-    <!-- Адрес -->
-    <div class="location-badge" id="location-badge">
+    <div class="location-badge">
         <span style="color: #4facfe;">📍</span>
         <span id="address-text">Загрузка...</span>
     </div>
     
-    <!-- Инфо-панель -->
-    <div class="info-panel" id="info-panel">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-weight: 600;">🏠 Зданий в радиусе:</span>
-            <span style="color: #4facfe; font-weight: 700;" id="building-count">0</span>
+    <div class="info-panel">
+        <div style="display: flex; justify-content: space-between;">
+            <span>🏠 Зданий:</span>
+            <span style="color: #4facfe;" id="building-count">0</span>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-            <span style="font-weight: 600;">🚶 Маршрутов:</span>
-            <span style="color: #4facfe; font-weight: 700;" id="routes-count">0</span>
+        <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+            <span>🚶 Маршрутов:</span>
+            <span style="color: #4facfe;" id="routes-count">0</span>
         </div>
     </div>
     
-    <!-- Контроллер радиуса -->
     <div class="radius-control">
-        <h3>🎯 Радиус доступности</h3>
+        <h3 style="color: #4facfe;">🎯 Радиус доступности</h3>
         
         <input type="range" min="100" max="2000" value="800" step="10" class="slider" id="radius-slider">
         
-        <div style="display: flex; justify-content: space-between; margin-top: 8px; color: #888; font-size: 12px;">
+        <div style="display: flex; justify-content: space-between; margin-top: 8px; color: #888;">
             <span>100 м</span>
             <span id="radius-value">800 м</span>
             <span>2000 м</span>
@@ -192,69 +95,49 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/osmtogeojson@3.0.0-beta.4/osmtogeojson.js"></script>
-    
     <script>
-        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
-        let map;
-        let circle;
-        let marker;
-        let buildingsLayer;
-        let routesLayer;
-        
-        // ЖДЁМ ЗАГРУЗКИ
+        // 🔥 ИСПРАВЛЕНО: ВСЯ ЛОГИКА ВНУТРИ window.onload
         window.onload = function() {
-            console.log('🚀 Запуск карты...');
+            console.log('🚀 Запуск...');
             
-            // СОЗДАЁМ КАРТУ
-            map = L.map('map').setView([54.6298, 39.7425], 16);
+            // === ИНИЦИАЛИЗАЦИЯ ===
+            let map = L.map('map').setView([54.6298, 39.7425], 16);
             
-            // ДОБАВЛЯЕМ СПУТНИК
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '© Esri',
-                maxZoom: 19
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '©OpenStreetMap, ©CartoDB'
             }).addTo(map);
             
-            // СОЗДАЁМ СЛОИ
-            buildingsLayer = L.layerGroup().addTo(map);
-            routesLayer = L.layerGroup().addTo(map);
+            let buildingsLayer = L.layerGroup().addTo(map);
+            let routesLayer = L.layerGroup().addTo(map);
+            let circle, marker;
             
-            // ПОЛУЧАЕМ ПАРАМЕТРЫ ИЗ URL
-            const urlParams = new URLSearchParams(window.location.search);
+            // === ПОЛУЧАЕМ ПАРАМЕТРЫ ИЗ URL ===
+            // 🔥 ИСПРАВЛЕНО: берем из window.location.hash
+            let hash = window.location.hash.substring(1);
+            let params = new URLSearchParams(hash);
             
-            let lat = parseFloat(urlParams.get('lat'));
-            let lng = parseFloat(urlParams.get('lng'));
-            let rad = parseInt(urlParams.get('rad'));
-            let h = parseInt(urlParams.get('h'));
-            let addr = urlParams.get('addr');
+            let lat = parseFloat(params.get('lat')) || 54.6298;
+            let lng = parseFloat(params.get('lng')) || 39.7425;
+            let rad = parseInt(params.get('rad')) || 800;
+            let h = parseInt(params.get('h')) || 170;
+            let addr = decodeURIComponent(params.get('addr') || 'Рязань, центр');
             
-            // ЗНАЧЕНИЯ ПО УМОЛЧАНИЮ
-            if (!lat || !lng) {
-                lat = 54.6298;
-                lng = 39.7425;
-            }
-            if (!rad) rad = 800;
-            if (!h) h = 170;
-            if (!addr) addr = 'Рязань, центр';
-            
-            // ОБНОВЛЯЕМ ИНТЕРФЕЙС
-            document.getElementById('address-text').innerHTML = decodeURIComponent(addr);
+            // === ОБНОВЛЯЕМ ИНТЕРФЕЙС ===
+            document.getElementById('address-text').innerHTML = addr;
             document.getElementById('height-value').innerHTML = h;
             document.getElementById('radius-slider').value = rad;
             document.getElementById('radius-value').innerHTML = rad + ' м';
             
-            // СЧИТАЕМ СКОРОСТЬ И ВРЕМЯ
+            // Считаем скорость и время
             let speed = 5 * (h / 170);
-            let speedMmin = (speed * 1000) / 60;
-            let time = Math.round(rad / speedMmin);
+            let time = Math.round(rad / ((speed * 1000) / 60));
             
             document.getElementById('speed-value').innerHTML = speed.toFixed(1);
             document.getElementById('time-value').innerHTML = time;
             
-            // ПЕРЕМЕЩАЕМ КАРТУ
+            // === РИСУЕМ КАРТУ ===
             map.setView([lat, lng], 16);
             
-            // РИСУЕМ КРУГ
             circle = L.circle([lat, lng], {
                 radius: rad,
                 color: '#4facfe',
@@ -263,94 +146,89 @@
                 fillOpacity: 0.1
             }).addTo(map);
             
-            // РИСУЕМ МАРКЕР
             marker = L.marker([lat, lng]).addTo(map)
-                .bindPopup('📍 Точка старта')
+                .bindPopup('📍 ' + addr)
                 .openPopup();
             
-            console.log('✅ Карта готова!');
-            
-            // ЗАГРУЖАЕМ ДОМА
-            loadBuildings(lat, lng, rad);
-        };
-        
-        // ЗАГРУЗКА ДОМОВ
-        async function loadBuildings(lat, lng, radius) {
-            buildingsLayer.clearLayers();
-            
-            let query = `
-                [out:json];
-                (
-                    way["building"](around:${radius}, ${lat}, ${lng});
-                    relation["building"](around:${radius}, ${lat}, ${lng});
-                );
-                out body;
-                >;
-                out skel qt;
-            `;
-            
-            try {
-                let response = await fetch('https://overpass-api.de/api/interpreter', {
-                    method: 'POST',
-                    body: query
-                });
-                let data = await response.json();
-                let geojson = osmtogeojson(data);
+            // === ЗАГРУЖАЕМ ДОМА ===
+            async function loadBuildings(lat, lng, radius) {
+                buildingsLayer.clearLayers();
                 
-                L.geoJSON(geojson, {
-                    style: {
-                        color: '#00ffff',
-                        weight: 1,
-                        opacity: 0.6,
-                        fillOpacity: 0.1,
-                        fillColor: '#00ffff'
+                let query = `
+                    [out:json];
+                    (
+                        way["building"](around:${radius}, ${lat}, ${lng});
+                        relation["building"](around:${radius}, ${lat}, ${lng});
+                    );
+                    out body;
+                    >;
+                    out skel qt;
+                `;
+                
+                try {
+                    let response = await fetch('https://overpass-api.de/api/interpreter', {
+                        method: 'POST',
+                        body: query
+                    });
+                    let data = await response.json();
+                    
+                    if (window.osmtogeojson) {
+                        let geojson = window.osmtogeojson(data);
+                        L.geoJSON(geojson, {
+                            style: {
+                                color: '#4facfe',
+                                weight: 1,
+                                fillOpacity: 0.2,
+                                fillColor: '#4facfe'
+                            }
+                        }).addTo(buildingsLayer);
+                        
+                        document.getElementById('building-count').innerHTML = geojson.features.length || 0;
                     }
-                }).addTo(buildingsLayer);
+                } catch(e) {
+                    console.error('Ошибка:', e);
+                    document.getElementById('building-count').innerHTML = '0';
+                }
+            }
+            
+            loadBuildings(lat, lng, rad);
+            
+            // === ОБРАБОТЧИКИ КНОПОК ===
+            // 🔥 ИСПРАВЛЕНО: ВСЕ обработчики ВНУТРИ window.onload!
+            
+            document.getElementById('radius-slider').addEventListener('input', function(e) {
+                let newRad = parseInt(e.target.value);
+                document.getElementById('radius-value').innerHTML = newRad + ' м';
                 
-                document.getElementById('building-count').innerHTML = geojson.features.length;
-            } catch(e) {
-                console.error('Ошибка загрузки домов:', e);
-            }
-        }
-        
-        // СЛАЙДЕР РАДИУСА
-        document.getElementById('radius-slider').addEventListener('input', function(e) {
-            let rad = parseInt(e.target.value);
-            document.getElementById('radius-value').innerHTML = rad + ' м';
+                if (circle) map.removeLayer(circle);
+                
+                circle = L.circle([lat, lng], {
+                    radius: newRad,
+                    color: '#4facfe',
+                    weight: 2,
+                    fillColor: '#4facfe',
+                    fillOpacity: 0.1
+                }).addTo(map);
+                
+                let hVal = parseInt(document.getElementById('height-value').innerHTML);
+                let speedVal = 5 * (hVal / 170);
+                let timeVal = Math.round(newRad / ((speedVal * 1000) / 60));
+                document.getElementById('time-value').innerHTML = timeVal;
+                
+                loadBuildings(lat, lng, newRad);
+            });
             
-            if (circle) {
-                map.removeLayer(circle);
-            }
+            document.getElementById('focus-center').addEventListener('click', function() {
+                if (marker) {
+                    map.setView(marker.getLatLng(), 16);
+                }
+            });
             
-            circle = L.circle([map.getCenter().lat, map.getCenter().lng], {
-                radius: rad,
-                color: '#4facfe',
-                weight: 2,
-                fillColor: '#4facfe',
-                fillOpacity: 0.1
-            }).addTo(map);
-            
-            let h = parseInt(document.getElementById('height-value').innerHTML);
-            let speed = 5 * (h / 170);
-            let speedMmin = (speed * 1000) / 60;
-            let time = Math.round(rad / speedMmin);
-            document.getElementById('time-value').innerHTML = time;
-            
-            loadBuildings(map.getCenter().lat, map.getCenter().lng, rad);
-        });
-        
-        // КНОПКА "В ЦЕНТР"
-        document.getElementById('focus-center').addEventListener('click', function() {
-            if (marker) {
-                map.setView(marker.getLatLng(), 16);
-            }
-        });
-        
-        // КНОПКА "ОЧИСТИТЬ"
-        document.getElementById('clear-routes').addEventListener('click', function() {
-            routesLayer.clearLayers();
-            document.getElementById('routes-count').innerHTML = '0';
-        });
+            document.getElementById('clear-routes').addEventListener('click', function() {
+                routesLayer.clearLayers();
+                document.getElementById('routes-count').innerHTML = '0';
+            });
+        };
     </script>
 </body>
 </html>
