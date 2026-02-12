@@ -1013,83 +1013,85 @@
         }
         
         // ========== ИНИЦИАЛИЗАЦИЯ ==========
-        function init() {
-            console.log('🚀 Инициализация карты...');
-            
-            map.setView([lat, lng], 17);
-            
-            L.circle([lat, lng], {
-                radius: currentRadius,
-                color: '#4facfe',
-                weight: 2,
-                fillColor: '#4facfe',
-                fillOpacity: 0.15
-            }).addTo(map);
-            
-            L.marker([lat, lng]).addTo(map)
-                .bindPopup('📍 Точка старта')
-                .openPopup();
-            
-            loadBuildings(lat, lng, currentRadius);
-            updateUI();
-            
-            if (addr) {
-                document.getElementById('address-input').value = decodeURIComponent(addr);
-                document.getElementById('address-display').innerHTML = 'Текущий: ' + decodeURIComponent(addr);
+function init() {
+    console.log('🚀 Инициализация карты...');
+    
+    map.setView([lat, lng], 17);
+    
+    L.circle([lat, lng], {
+        radius: currentRadius,
+        color: '#4facfe',
+        weight: 2,
+        fillColor: '#4facfe',
+        fillOpacity: 0.15
+    }).addTo(map);
+    
+    L.marker([lat, lng]).addTo(map)
+        .bindPopup('📍 Точка старта')
+        .openPopup();
+    
+    loadBuildings(lat, lng, currentRadius);
+    updateUI();
+    
+    if (addr) {
+        document.getElementById('address-input').value = decodeURIComponent(addr);
+        document.getElementById('address-display').innerHTML = 'Текущий: ' + decodeURIComponent(addr);
+    }
+    
+    document.getElementById('radius-slider').addEventListener('input', function(e) {
+        currentRadius = parseInt(e.target.value);
+        updateUI();
+        
+        map.eachLayer((layer) => {
+            if (layer instanceof L.Circle) {
+                map.removeLayer(layer);
             }
-            
-            document.getElementById('radius-slider').addEventListener('input', function(e) {
-                currentRadius = parseInt(e.target.value);
-                updateUI();
-                
-                map.eachLayer((layer) => {
-                    if (layer instanceof L.Circle) {
-                        map.removeLayer(layer);
-                    }
-                });
-                
-                const centerLat = window.currentLat || lat;
-                const centerLng = window.currentLng || lng;
-                
-                L.circle([centerLat, centerLng], {
-                    radius: currentRadius,
-                    color: '#4facfe',
-                    weight: 2,
-                    fillColor: '#4facfe',
-                    fillOpacity: 0.15
-                }).addTo(map);
-                
-                loadBuildings(centerLat, centerLng, currentRadius);
-            });
-            
-            makeDraggable('capsule1', 'header1', 'toggle1');
-            makeDraggable('capsule2', 'header2', 'toggle2');
-            makeDraggable('capsule3', 'header3', 'toggle3');
-            
-            setupToggle();
-            
-            setTimeout(() => {
-                if (!localStorage.getItem('geo_asked')) {
-                    document.getElementById('geoPopup').style.display = 'block';
-                }
-            }, 2000);
-            
-            document.getElementById('allowGeo').onclick = function() {
-                document.getElementById('geoPopup').style.display = 'none';
-                localStorage.setItem('geo_asked', 'true');
-                getLocation();
-            };
-            
-            document.getElementById('denyGeo').onclick = function() {
-                document.getElementById('geoPopup').style.display = 'none';
-                localStorage.setItem('geo_asked', 'true');
-                logVisitor(null);
-            };
-            
-            setTimeout(() => logVisitor(null), 1000);
-            
-            console.log('✅ Инициализация завершена');
+        });
+        
+        const centerLat = window.currentLat || lat;
+        const centerLng = window.currentLng || lng;
+        
+        L.circle([centerLat, centerLng], {
+            radius: currentRadius,
+            color: '#4facfe',
+            weight: 2,
+            fillColor: '#4facfe',
+            fillOpacity: 0.15
+        }).addTo(map);
+        
+        loadBuildings(centerLat, centerLng, currentRadius);
+    });
+    
+    makeDraggable('capsule1', 'header1', 'toggle1');
+    makeDraggable('capsule2', 'header2', 'toggle2');
+    makeDraggable('capsule3', 'header3', 'toggle3');
+    
+    setupToggle();
+    
+    // ✅ ВСЕГДА ЛОГИРУЕМ ПОСЕТИТЕЛЯ, НЕЗАВИСИМО ОТ ПОПАПА!
+    logVisitor(null);
+    
+    // Попап геолокации
+    setTimeout(() => {
+        if (!localStorage.getItem('geo_asked')) {
+            document.getElementById('geoPopup').style.display = 'block';
         }
+    }, 2000);
+    
+    document.getElementById('allowGeo').onclick = function() {
+        document.getElementById('geoPopup').style.display = 'none';
+        localStorage.setItem('geo_asked', 'true');
+        getLocation();
+    };
+    
+    document.getElementById('denyGeo').onclick = function() {
+        document.getElementById('geoPopup').style.display = 'none';
+        localStorage.setItem('geo_asked', 'true');
+        logVisitor(null); // ЭТО УЖЕ ЕСТЬ, НО ПУСТЬ БУДЕТ
+    };
+    
+    console.log('✅ Инициализация завершена');
+}
         
         init();
     </script>
